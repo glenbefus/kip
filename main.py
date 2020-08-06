@@ -2,6 +2,11 @@ import random
 import os
 import pygame
 
+TOP_NORMAL = pygame.math.Vector2(0, 1)
+BOTTOM_NORMAL = pygame.math.Vector2(0, -1)
+LEFT_NORMAL = pygame.math.Vector2(1, 0)
+RIGHT_NORMAL = pygame.math.Vector2(-1, 0)
+
 BALL_WIDTH = 20
 
 BLUE = (0, 0, 255)
@@ -30,13 +35,13 @@ class PaddleState(EntityState):
 
 class BallState(EntityState):
     def update(self, dx, dy):
-        self.rect.x += dx
-        self.rect.y += dy
+        self.rect.move_ip(dx, dy)
 
 
 class App:
     def __init__(self):
-        self.velocity = 8
+        self.paddle_velocity = 8
+        self.ball_velocity = 8
         self.running = True
         self.width, self.height = 1280, 720
         x, y = 40, 360
@@ -47,6 +52,11 @@ class App:
 
         self.left_paddle_move_command = PaddleMoveCommand()
         self.right_paddle_move_command = PaddleMoveCommand()
+
+        self.ball_vector = pygame.math.Vector2()
+        self.ball_vector.x = random.randint(1, 10)
+        self.ball_vector.y = random.randint(1, 10)
+        self.ball_vector.normalize_ip()
 
         self.clock = pygame.time.Clock()
 
@@ -65,21 +75,35 @@ class App:
     def process_input_for_paddle(self, event, move_command, up_key, down_key):
         if pygame.KEYDOWN == event.type:
             if event.key == down_key:
-                move_command.change(self.velocity)
+                move_command.change(self.paddle_velocity)
             elif event.key == up_key:
-                move_command.change(-self.velocity)
+                move_command.change(-self.paddle_velocity)
         elif pygame.KEYUP == event.type:
             if event.key == down_key:
-                move_command.change(-self.velocity)
+                move_command.change(-self.paddle_velocity)
             elif event.key == up_key:
-                move_command.change(self.velocity)
+                move_command.change(self.paddle_velocity)
 
     def update(self):
         self.left_paddle_state.update(self.left_paddle_move_command.y)
         self.right_paddle_state.update(self.right_paddle_move_command.y)
 
-        #move ball
-        #detect ball collides with paddle
+        # move ball
+        self.ball_state.update(int(self.ball_vector.x * self.ball_velocity),
+                               int(self.ball_vector.y * self.ball_velocity))
+
+        # detect ball collides with wall
+        ball_rect = self.ball_state.rect
+        if ball_rect.top <= 0:
+            self.ball_vector.reflect_ip(TOP_NORMAL)
+        elif ball_rect.bottom >= self.height:
+            self.ball_vector.reflect_ip(BOTTOM_NORMAL)
+        elif ball_rect.left <= 0:
+            self.ball_vector.reflect_ip(LEFT_NORMAL)
+        elif ball_rect.right >= self.width:
+            self.ball_vector.reflect_ip(RIGHT_NORMAL)
+
+        # detect ball collides with paddle
         # detect where on paddle ball collides to create new angle
         # if ball passes paddle, reset ball to center
 
