@@ -7,7 +7,10 @@ BOTTOM_NORMAL = pygame.math.Vector2(0, -1)
 LEFT_NORMAL = pygame.math.Vector2(1, 0)
 RIGHT_NORMAL = pygame.math.Vector2(-1, 0)
 
+FRAME_RATE = 60
+PADDLE_HEIGHT = 90
 BALL_WIDTH = 20
+PADDLE_CIRCLE_RADIUS = (3 * BALL_WIDTH)
 
 BLUE = (0, 0, 255)
 BLACK = (0, 0, 0)
@@ -45,7 +48,7 @@ class App:
         self.running = True
         self.width, self.height = 1280, 720
         x, y = 40, 360
-        self.left_paddle_state = PaddleState(x, y, BALL_WIDTH, 80)
+        self.left_paddle_state = PaddleState(x, y, BALL_WIDTH, PADDLE_HEIGHT)
         self.right_paddle_state = PaddleState(self.width - x, y, BALL_WIDTH, 80)
 
         self.ball_state = BallState(self.width // 2, y, BALL_WIDTH, BALL_WIDTH)
@@ -103,11 +106,13 @@ class App:
             self.ball_vector.reflect_ip(RIGHT_NORMAL)
 
         # detect ball collides with paddle
-        if ball_rect.colliderect(self.left_paddle_state.rect):
-            self.ball_vector.reflect_ip(LEFT_NORMAL)
-        elif ball_rect.colliderect(self.right_paddle_state.rect):
-            self.ball_vector.reflect_ip(RIGHT_NORMAL)
-        # detect where on paddle ball collides to create new angle
+        left_paddle_rect = self.left_paddle_state.rect
+        right_paddle_rect = self.right_paddle_state.rect
+        if ball_rect.colliderect(left_paddle_rect):
+            self.ball_vector = self.calculate_left_paddle_normal(ball_rect, left_paddle_rect)
+        elif ball_rect.colliderect(right_paddle_rect):
+            self.ball_vector = self.calculate_right_paddle_normal(ball_rect, right_paddle_rect)
+
         # if ball passes paddle, reset ball to center
 
     def render(self):
@@ -120,13 +125,27 @@ class App:
     def draw_entity(self, entity_state):
         pygame.draw.rect(self.surface, BLUE, entity_state.rect, 0)
 
+    def calculate_left_paddle_normal(self, ball_rect, paddle_rect):
+        # Imagine the paddle is actually a sixth of a circle.
+        # When the ball hits the paddle off center, it will bounce like it collided with a rounded edge.
+        circle_middle_x = paddle_rect.right - PADDLE_CIRCLE_RADIUS
+        circle_middle_y = paddle_rect.centery
+        return pygame.math.Vector2(ball_rect.centerx - circle_middle_x, ball_rect.centery - circle_middle_y).normalize()
+
+    def calculate_right_paddle_normal(self, ball_rect, paddle_rect):
+        # Imagine the paddle is actually a sixth of a circle.
+        # When the ball hits the paddle off center, it will bounce like it collided with a rounded edge.
+        circle_middle_x = paddle_rect.left - PADDLE_CIRCLE_RADIUS
+        circle_middle_y = paddle_rect.centery
+        return pygame.math.Vector2(circle_middle_x - ball_rect.centerx, ball_rect.centery - circle_middle_y).normalize()
+
     def run(self):
         while self.running:
             self.process_input()
             self.update()
             self.render()
 
-            self.clock.tick(60)
+            self.clock.tick(FRAME_RATE)
 
 
 def main():
