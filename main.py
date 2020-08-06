@@ -54,9 +54,8 @@ class App:
         self.right_paddle_move_command = PaddleMoveCommand()
 
         self.ball_vector = pygame.math.Vector2()
-        self.ball_vector.x = random.randint(1, 10)
-        self.ball_vector.y = random.randint(1, 10)
-        self.ball_vector.normalize_ip()
+        self.ball_vector.x = random.uniform(0.25, 1.0)  # make sure ball has horizontal momentum
+        self.ball_vector.y = random.random()
 
         self.clock = pygame.time.Clock()
 
@@ -104,6 +103,10 @@ class App:
             self.ball_vector.reflect_ip(RIGHT_NORMAL)
 
         # detect ball collides with paddle
+        if ball_rect.colliderect(self.left_paddle_state.rect):
+            self.ball_vector.reflect_ip(LEFT_NORMAL)
+        elif ball_rect.colliderect(self.right_paddle_state.rect):
+            self.ball_vector.reflect_ip(RIGHT_NORMAL)
         # detect where on paddle ball collides to create new angle
         # if ball passes paddle, reset ball to center
 
